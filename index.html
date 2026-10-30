@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Phần Mềm Chuyển Tone (Transpose) & Tham Khảo Hợp Âm</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="offline-image-export.js"></script>
     <style>
         :root {
             --primary: #3498db;
@@ -1344,62 +1344,35 @@
         }
 
         function downloadImage() {
-            const outputHtml = document.getElementById('output-text').innerHTML;
-            if (!outputHtml.trim()) {
-                alert("Chưa có kết quả nốt nhạc để tạo ảnh!");
+            const output = document.getElementById('output-text');
+            if (!output.textContent.trim()) {
+                alert('Chưa có kết quả nốt nhạc để tạo ảnh!');
                 return;
             }
 
-            const songTitleInput = document.getElementById('song-title').value.trim();
-            const displayTitle = songTitleInput || "Bản Nhạc Chuyển Tone";
-            const filename = (songTitleInput ? songTitleInput.replace(/\s+/g, '_') : "Ban_Nhac") + `_${state.target}`;
+            const button = document.querySelector('.img-btn');
+            if (button.disabled) return;
+            const songTitle = document.getElementById('song-title').value.trim();
+            const safeName = (songTitle || 'Ban_Nhac')
+                .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
+                .replace(/\s+/g, '_')
+                .slice(0, 90);
 
-            const exportDiv = document.createElement('div');
-            exportDiv.style.position = 'fixed';
-            exportDiv.style.top = '0';
-            exportDiv.style.left = '-9999px';
-            exportDiv.style.width = '760px';
-            exportDiv.style.backgroundColor = '#f8f9fa';
-            exportDiv.style.padding = '36px';
-            exportDiv.style.fontFamily = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-
-            const titleEl = document.createElement('h2');
-            titleEl.style.textAlign = 'center';
-            titleEl.style.color = '#2c3e50';
-            titleEl.style.margin = '0 0 10px 0';
-            titleEl.style.fontSize = '2em';
-            titleEl.textContent = displayTitle;
-            exportDiv.appendChild(titleEl);
-
-            const tonesEl = document.createElement('p');
-            tonesEl.style.textAlign = 'center';
-            tonesEl.style.color = '#7f8c8d';
-            tonesEl.style.margin = '0 0 24px 0';
-            tonesEl.style.fontSize = '1.15em';
-            tonesEl.innerHTML = `Tone gốc: <strong>${state.source || "Chưa chọn"}</strong> &nbsp;&nbsp;➡️&nbsp;&nbsp; Tone đích: <strong style="color: #e74c3c;">${state.target}</strong>`;
-            exportDiv.appendChild(tonesEl);
-
-            const notesEl = document.createElement('div');
-            notesEl.style.whiteSpace = 'pre-wrap';
-            notesEl.style.fontSize = '1.35em';
-            notesEl.style.lineHeight = '1.8';
-            notesEl.style.fontWeight = 'bold';
-            notesEl.style.color = '#333';
-            notesEl.innerHTML = outputHtml;
-            exportDiv.appendChild(notesEl);
-
-            document.body.appendChild(exportDiv);
-
-            html2canvas(exportDiv, {
-                backgroundColor: "#f8f9fa",
-                scale: 2
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = filename + '.png';
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-                document.body.removeChild(exportDiv);
-            });
+            button.disabled = true;
+            try {
+                exportSongImageOffline({
+                    title: songTitle || 'Bản Nhạc Chuyển Tone',
+                    source: state.source,
+                    target: state.target,
+                    filename: `${safeName}_${state.target}.png`,
+                    outputElement: output
+                });
+            } catch (error) {
+                console.error('Lỗi khi tạo ảnh offline:', error);
+                alert('Không tạo được ảnh: ' + error.message);
+            } finally {
+                button.disabled = false;
+            }
         }
 
         window.onload = () => {
