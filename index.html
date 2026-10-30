@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Phần Mềm Chuyển Tone (Transpose) & Tham Khảo Hợp Âm</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --bg: #f4f7f6;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg);
+            color: #333;
+            margin: 0;
+            padding: 12px;
+            padding-bottom: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        h1 {
+            color: var(--dark);
+            text-align: center;
+            margin: 5px 0;
+            font-size: 1.45em;
+        }
+        p.subtitle {
+            color: #7f8c8d;
+            text-align: center;
+            margin: 0 0 15px 0;
+            font-size: 0.9em;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* === PHẦN ẢNH THAM KHẢO (ĐÓNG/MỞ GỌN TRÊN MOBILE) === */
+        .info-image-section {
+            background: #fff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            text-align: center;
+            width: 100%;
+        }
+        .reference-toggle-btn {
+            background: #eef2f5;
+            color: var(--dark);
+            border: 1px solid #dce4ec;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+        }
+        .reference-content {
+            display: none;
+            margin-top: 12px;
+        }
+        .reference-content.open {
+            display: block;
+        }
+        .reference-content p {
+            color: #666;
+            margin: 0 0 12px 0;
+            line-height: 1.5;
+            font-size: 0.9em;
+        }
+        .reference-image {
+            max-width: 550px;
+            width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        /* === THANH TRẠNG THÁI TONE & CHUYỂN TAB TRÊN ĐIỆN THOẠI === */
+        .mobile-tone-bar {
+            display: none;
+            background: #fff;
+            padding: 10px 12px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            position: sticky;
+            top: 6px;
+            z-index: 100;
+            border: 1px solid #e2e8f0;
+        }
+        .tone-tab-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            font-weight: bold;
+            font-size: 0.9em;
+            color: var(--dark);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .tone-tab-btn.active {
+            border-color: var(--primary);
+            background: #ebf8ff;
+        }
+        .tone-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            background: var(--dark);
+            color: #fff;
+            margin-left: 4px;
+        }
+        .semitone-quick-btns {
+            display: flex;
+            gap: 4px;
+        }
+        .semi-btn {
+            background: var(--dark);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-weight: bold;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        .semi-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* === BỐ CỤC CÔNG CỤ CHUYỂN TONE === */
+        .transposer-interface {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Khu vực Vòng tròn */
+        .circle-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .circle-section h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.1em;
+            color: #34495e;
+        }
+        .wheel-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background-color: #fdfdfd;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+        .tone-btn {
+            position: absolute;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+            z-index: 5;
+        }
+        .major-btn { font-size: 0.85em; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
+        .minor-btn { font-size: 0.75em; color: #222; }
+        .tone-btn.selected {
+            transform: scale(1.25);
+            border: 3px solid var(--dark);
+            box-shadow: 0 0 12px rgba(44, 62, 80, 0.5);
+            z-index: 20;
+        }
+
+        /* Khu vực Nhập/Xuất văn bản */
+        .text-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+            min-width: 300px;
+        }
+        .text-box {
+            background: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .text-box h3 {
+            margin: 0 0 8px 0;
+            font-size: 1em;
+            color: var(--dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .song-title-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 12px;
+            outline: none;
+            font-family: inherit;
+            font-weight: bold;
+            color: var(--dark);
+        }
+        .kbd-toggle-btn {
+            background-color: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        textarea, .output-div {
+            width: 100%;
+            min-height: 130px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 1.05em;
+            font-weight: bold;
+            outline: none;
+            line-height: 1.6;
+            background-color: #f8f9fa;
+        }
+        textarea {
+            resize: vertical;
+        }
+        textarea:focus {
+            border-color: var(--primary);
+        }
+        .output-div {
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-bottom: 52px;
+        }
+
+        /* === CONTROLS AUDIO === */
+        .playback-controls {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .play-btn, .pause-btn, .stop-btn {
+            border: none;
+            padding: 8px 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        .play-btn { background-color: var(--success); color: white; }
+        .pause-btn { background-color: var(--warning); color: #333; }
+        .stop-btn { background-color: var(--danger); color: white; }
+        .audio-target-select {
+            padding: 7px 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-weight: bold;
+            font-size: 0.85em;
+            color: var(--dark);
+            background: #fff;
+        }
+
+        #playback-modal {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(44, 62, 80, 0.96);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 10px;
+            z-index: 10000;
+            text-align: center;
+            width: 92%;
+            max-width: 420px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 2px solid var(--primary);
+        }
+        #playback-modal h3 {
+            margin: 0 0 6px 0;
+            color: var(--success);
+            font-size: 0.95em;
+        }
+        #playback-line-display {
+            font-size: 1.15em;
+            font-weight: bold;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .playing-note-highlight {
+            color: #f1c40f;
+            text-decoration: underline;
+            transform: scale(1.1);
+            display: inline-block;
+        }
+
+        .options-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .options-group {
+            font-size: 0.9em;
+            color: var(--dark);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .options-group input {
+            margin-right: 6px;
+            width: 18px;
+            height: 18px;
+        }
+        .octave-btn {
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            font-weight: bold;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .color-legend {
+            display: flex;
+            gap: 12px;
+            font-size: 0.78em;
+            color: #666;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        /* === BẢNG CHỌN 21 NỐT FIXED DƯỚI ĐÁY === */
+        #note-board-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #fdfdfd;
+            padding: 8px 8px 14px 8px;
+            border-top: 2px solid var(--primary);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        #note-board-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .board-header {
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            gap: 6px;
+        }
+        .board-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .board-header-left h4 {
+            margin: 0;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+        .toggle-board-btn {
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            padding: 5px 10px;
+            border-radius: 6px;
+            color: var(--dark);
+            font-size: 0.8em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .note-row {
+            display: grid;
+            grid-template-columns: 42px repeat(7, 1fr);
+            gap: 4px;
+            align-items: center;
+            width: 100%;
+        }
+        .note-row-label {
+            font-size: 0.75em;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+        .note-cell {
+            background: #f1f2f6;
+            border: 1px solid #ced6e0;
+            padding: 11px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #2f3542;
+            user-select: none;
+            text-align: center;
+            font-size: 0.95em;
+        }
+        .note-cell:active {
+            background: #7bed9f;
+            border-color: #2ed573;
+            transform: scale(0.94);
+        }
+        .board-tools-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .tool-cell {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            padding: 8px 0;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.82em;
+            color: var(--dark);
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tool-cell.danger {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
+        .tool-cell:active {
+            transform: scale(0.95);
+        }
+
+        .action-btns {
+            position: absolute;
+            bottom: 14px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+        }
+        .copy-btn, .img-btn {
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .copy-btn { background-color: var(--success); }
+        .img-btn { background-color: var(--primary); }
+
+        @media (max-width: 768px) {
+            .mobile-tone-bar {
+                display: flex;
+            }
+            .transposer-interface {
+                flex-direction: column;
+                align-items: center;
+            }
+            .text-section {
+                width: 100%;
+            }
+            .circle-section {
+                width: 100%;
+            }
+            .circle-section.mobile-hidden {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Chuyển Tone & Cảm Âm Nhạc Cụ</h1>
+    <p class="subtitle">Chọn Tone Gốc để mở bảng 21 nốt, chạm nốt để dịch tự động sang Tone Đích</p>
+
+    <!-- CỬA SỔ HIỂN THỊ KHI ĐANG PHÁT ÂM THANH -->
+    <div id="playback-modal">
+        <h3 id="playback-title">▶ Đang phát...</h3>
+        <div id="playback-line-display"></div>
+    </div>
+
+    <div class="main-container">
+
+        <!-- ẢNH THAM KHẢO THU GỌN ĐƯỢC -->
+        <div class="info-image-section">
+            <button class="reference-toggle-btn" onclick="toggleReferenceImage()" id="ref-toggle-btn">
+                📖 Xem biểu đồ Vòng Tròn Hợp Âm tham khảo ▼
+            </button>
+            <div class="reference-content" id="ref-content">
+                <p>Sử dụng biểu đồ này để tra cứu nhanh quan hệ giọng Trưởng / Thứ tương đương và dấu hóa.</p>
+                <img src="vongtron_hopam.jpg" alt="Vòng tròn hợp âm tham khảo trực quan" class="reference-image">
+            </div>
+        </div>
+
+        <!-- THANH CHUYỂN NHANH TONE GỐC / ĐÍCH TRÊN ĐIỆN THOẠI -->
+        <div class="mobile-tone-bar">
+            <button class="tone-tab-btn active" id="tab-source-btn" onclick="switchMobileWheel('source')">
+                1. Gốc: <span class="tone-badge" id="mobile-src-badge">Chọn</span>
+            </button>
+            <span style="font-weight:bold; color:#7f8c8d;">➡️</span>
+            <button class="tone-tab-btn" id="tab-target-btn" onclick="switchMobileWheel('target')">
+                2. Đích: <span class="tone-badge" id="mobile-tgt-badge" style="background:#e74c3c;">C</span>
+            </button>
+            <div class="semitone-quick-btns" title="Dịch nhanh bán cung">
+                <button class="semi-btn" onclick="shiftTargetSemitone(-1)">-1</button>
+                <button class="semi-btn" onclick="shiftTargetSemitone(1)">+1</button>
+            </div>
+        </div>
+
+        <div class="transposer-interface">
+            <div class="circle-section" id="source-circle-card">
+                <h2>1. Chọn Tone Gốc</h2>
+                <div id="source-wheel" class="wheel-container"></div>
+            </div>
+
+            <div class="circle-section mobile-hidden" id="target-circle-card">
+                <h2>2. Chọn Tone Đích</h2>
+                <div id="target-wheel" class="wheel-container"></div>
+            </div>
+
+            <div class="text-section">
+                <div class="text-box">
+                    <h3>Tên bài hát (hiển thị trên ảnh tải về)</h3>
+                    <input type="text" id="song-title" class="song-title-input" placeholder="Ví dụ: Tiến quân ca ...">
+
+                    <h3>
+                        Nhập nốt nhạc (Tone Gốc)
+                        <button id="toggle-kbd-btn" class="kbd-toggle-btn" onclick="toggleKeyboard()">Bàn phím máy: TẮT</button>
+                    </h3>
+                    <textarea id="input-text" placeholder="Chạm bảng 21 nốt bên dưới hoặc bật bàn phím để gõ..." readonly></textarea>
+
+                    <!-- NÚT ĐIỀU KHIỂN AUDIO -->
+                    <div class="playback-controls">
+                        <select id="audio-pitch-mode" class="audio-target-select">
+                            <option value="TARGET">🔊 Phát theo Tone Đích</option>
+                            <option value="SOURCE">🔊 Phát theo Tone Gốc</option>
+                        </select>
+                        <button class="play-btn" onclick="startPlayback('ALL')">▶ Tất cả</button>
+                        <button class="play-btn" onclick="startPlayback('LINE')">▶ Từng dòng</button>
+                        <button class="pause-btn" id="btn-pause" onclick="togglePause()">⏸ Tạm dừng</button>
+                        <button class="stop-btn" onclick="stopPlayback()">⏹ Dừng</button>
+                    </div>
+                </div>
+
+                <div class="text-box result-area">
+                    <h3>
+                        <span>Kết quả Tone Đích (<strong id="result-target-label" style="color:#e74c3c;">C</strong>)</span>
+                        <span id="semitone-diff-label" style="font-size:0.85em; color:#7f8c8d;"></span>
+                    </h3>
+
+                    <div class="options-bar">
+                        <label class="options-group">
+                            <input type="checkbox" id="use-solfege" onchange="processTranspose()">
+                            Hiện tên nốt (đồ Rê MÍ...)
+                        </label>
+
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="font-size: 0.9em; font-weight: bold; color: #2c3e50;">Quãng 8:</span>
+                            <button class="octave-btn" style="background: #e74c3c;" onclick="shiftOctave(-1)">-</button>
+                            <span id="octave-display" style="font-weight: bold; font-size: 0.95em; min-width: 22px; text-align: center;">0</span>
+                            <button class="octave-btn" style="background: #2ecc71;" onclick="shiftOctave(1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="color-legend">
+                        <span><i class="legend-dot" style="background:#e74c3c;"></i>Đỏ: Nốt lặp cùng cao độ</span>
+                        <span><i class="legend-dot" style="background:#2ecc71;"></i>Xanh lá: Liền bậc (1-2 bán cung)</span>
+                        <span><i class="legend-dot" style="background:#2c3e50;"></i>Đen: Nhảy quãng</span>
+                    </div>
+
+                    <div id="output-text" class="output-div"></div>
+                    <div class="action-btns">
+                        <button class="copy-btn" onclick="copyResult()">Sao chép</button>
+                        <button class="img-btn" onclick="downloadImage()">Tạo ảnh</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BẢNG NỐT NHẠC FIXED DƯỚI ĐÁY MÀN HÌNH -->
+    <div id="note-board-wrapper">
+        <div class="board-header">
+            <div class="board-header-left">
+                <h4>Bảng 21 nốt Tone <strong id="current-tone-label" style="color: #e74c3c;">...</strong></h4>
+                <label style="font-size: 0.8em; color: #2c3e50; display:flex; align-items:center; gap:3px; cursor:pointer;">
+                    <input type="checkbox" id="tap-sound-chk" checked> 🔊 Kêu khi chạm
+                </label>
+            </div>
+            <button id="toggle-board-btn" class="toggle-board-btn" onclick="toggleNoteBoard()">▼ Thu gọn</button>
+        </div>
+        <div id="note-board-container"></div>
+    </div>
+
+    <script>
+        const keysData = {
+            "C": {val: 0, col: "#FF0000"}, "G": {val: 7, col: "#FF5500"}, "D": {val: 2, col: "#FF9900"},
+            "A": {val: 9, col: "#FFCC00"}, "E": {val: 4, col: "#FFFF00"}, "B": {val: 11, col: "#88FF00"},
+            "F#":{val: 6, col: "#00FF00"}, "Db":{val: 1, col: "#00CCCC"}, "Ab":{val: 8, col: "#0000FF"},
+            "Eb":{val: 3, col: "#4400CC"}, "Bb":{val: 10, col: "#880088"}, "F": {val: 5, col: "#FF00FF"},
+
+            "Am": {val: 9, col: "#FFCC99"}, "Em": {val: 4, col: "#FFFF99"}, "Bm": {val: 11, col: "#CCFF99"},
+            "F#m":{val: 6, col: "#99FF99"}, "C#m":{val: 1, col: "#99FFFF"}, "G#m":{val: 8, col: "#99CCFF"},
+            "D#m":{val: 3, col: "#9999FF"}, "Bbm":{val: 10, col: "#CC99FF"}, "Fm": {val: 5, col: "#FF99FF"},
+            "Cm": {val: 0, col: "#FF99CC"}, "Gm": {val: 7, col: "#FF9999"}, "Dm": {val: 2, col: "#FFB366"}
+        };
+
+        const scalesDict = {
+            "C": "C D E F G A B", "G": "G A B C D E F#", "D": "D E F# G A B C#",
+            "A": "A B C# D E F# G#", "E": "E F# G# A B C# D#", "B": "B C# D# E F# G# A#",
+            "F#": "F# G# A# B C# D# E#", "Db": "Db Eb F Gb Ab Bb C", "Ab": "Ab Bb C Db Eb F G",
+            "Eb": "Eb F G Ab Bb C D", "Bb": "Bb C D Eb F G A", "F": "F G A Bb C D E",
+            "Am": "A B C D E F G", "Em": "E F# G A B C D", "Bm": "B C# D E F# G A",
+            "F#m": "F# G# A B C# D E", "C#m": "C# D# E F# G# A B", "G#m": "G# A# B C# D# E F#",
+            "D#m": "D# E# F# G# A# B C#", "Bbm": "Bb C Db Eb F Gb Ab", "Fm": "F G Ab Bb C Db Eb",
+            "Cm": "C D Eb F G Ab Bb", "Gm": "G A Bb C D Eb F", "Dm": "D E F G A Bb C"
+        };
+
+        // Đã bổ sung đầy đủ các nốt đồng âm E#, B#, Cb, Fb
+        const solfegeMap = {
+            "C":  { low: "đồ", mid: "Đô", high: "ĐỐ" },
+            "B#": { low: "si#", mid: "Si#", high: "SÍ#" },
+            "C#": { low: "đồ#", mid: "Đô#", high: "ĐỐ#" },
+            "Db": { low: "rềb", mid: "Rêb", high: "RẾb" },
+            "D":  { low: "rề", mid: "Rê", high: "RẾ" },
+            "D#": { low: "rề#", mid: "Rê#", high: "RẾ#" },
+            "Eb": { low: "mìb", mid: "Mib", high: "MÍb" },
+            "E":  { low: "mì", mid: "Mi", high: "MÍ" },
+            "Fb": { low: "fàb", mid: "Fab", high: "FÁb" },
+            "E#": { low: "mì#", mid: "Mi#", high: "MÍ#" },
+            "F":  { low: "fà", mid: "Fa", high: "FÁ" },
+            "F#": { low: "fà#", mid: "Fa#", high: "FÁ#" },
+            "Gb": { low: "sònb", mid: "Sonb", high: "SÓNb" },
+            "G":  { low: "sòn", mid: "Son", high: "SÓN" },
+            "G#": { low: "sòn#", mid: "Son#", high: "SÓN#" },
+            "Ab": { low: "làb", mid: "Lab", high: "LÁb" },
+            "A":  { low: "là", mid: "La", high: "LÁ" },
+            "A#": { low: "là#", mid: "La#", high: "LÁ#" },
+            "Bb": { low: "sìb", mid: "Sib", high: "SÍb" },
+            "B":  { low: "sì", mid: "Si", high: "SÍ" },
+            "Cb": { low: "đồb", mid: "Đôb", high: "ĐỐb" }
+        };
+
+        const majorKeys = ["C", "G", "D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F"];
+        const minorKeys = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m", "Bbm", "Fm", "Cm", "Gm", "Dm"];
+
+        // Đã bổ sung E#:5, B#:0, CB:11, FB:4 để sửa lỗi mất nốt ở tone F# và D#m
+        const noteToVal = {
+            "C":0, "B#":0, "C#":1, "DB":1, "D":2, "D#":3, "EB":3, "E":4, "FB":4,
+            "F":5, "E#":5, "F#":6, "GB":6, "G":7, "G#":8, "AB":8, "A":9, "A#":10, "BB":10, "B":11, "CB":11
+        };
+
+        const sharps = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const flats  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+        const flatKeys = ["F", "Bb", "Eb", "Ab", "Db", "Dm", "Gm", "Cm", "Fm", "Bbm"];
+
+        let state = { source: null, target: "C" };
+        let isDeviceKeyboardEnabled = false;
+        let isBoardCollapsed = false;
+        let octaveOffset = 0;
+
+        /* === TIỆN ÍCH GIAO DIỆN MOBILE === */
+        function toggleReferenceImage() {
+            const content = document.getElementById('ref-content');
+            const btn = document.getElementById('ref-toggle-btn');
+            content.classList.toggle('open');
+            btn.textContent = content.classList.contains('open')
+                ? "📖 Ẩn biểu đồ Vòng Tròn Hợp Âm ▲"
+                : "📖 Xem biểu đồ Vòng Tròn Hợp Âm tham khảo ▼";
+        }
+
+        function switchMobileWheel(which) {
+            const srcCard = document.getElementById('source-circle-card');
+            const tgtCard = document.getElementById('target-circle-card');
+            const srcTab = document.getElementById('tab-source-btn');
+            const tgtTab = document.getElementById('tab-target-btn');
+
+            if (which === 'source') {
+                srcCard.classList.remove('mobile-hidden');
+                tgtCard.classList.add('mobile-hidden');
+                srcTab.classList.add('active');
+                tgtTab.classList.remove('active');
+            } else {
+                srcCard.classList.add('mobile-hidden');
+                tgtCard.classList.remove('mobile-hidden');
+                srcTab.classList.remove('active');
+                tgtTab.classList.add('active');
+            }
+        }
+
+        function shiftTargetSemitone(step) {
+            const isMinor = state.target.endsWith('m');
+            const keyList = isMinor ? minorKeys : majorKeys;
+            const currentVal = keysData[state.target].val;
+            const nextVal = (currentVal + step + 12) % 12;
+            const nextKey = keyList.find(k => keysData[k].val === nextVal);
+            if (nextKey) {
+                selectTargetKey(nextKey);
+            }
+        }
+
+        function selectTargetKey(key) {
+            state.target = key;
+            document.getElementById('mobile-tgt-badge').textContent = key;
+            document.getElementById('result-target-label').textContent = key;
+            const tgtContainer = document.getElementById('target-wheel');
+            tgtContainer.querySelectorAll('.tone-btn').forEach(b => {
+                b.classList.toggle('selected', b.textContent === key);
+            });
+            processTranspose();
+        }
+
+        /* === PARSER NỐT NHẠC DÙNG CHUNG CHO TRANSPOSE & AUDIO === */
+        function parseNoteToken(token) {
+            // Hỗ trợ cả chấm trước (.c cho quãng 2) và chấm sau (C. cho quãng 5+)
+            const match = token.match(/^(['\.]*)([a-zA-Z])(['\.]*)([#bB]?)(['\.]*)$/);
+            if (!match) return null;
+
+            const preDots = match[1];
+            const letter = match[2];
+            const accidental = match[4];
+            const postDots = match[3] + match[5];
+
+            const notePart = letter + accidental;
+            const cleanNote = notePart.toUpperCase();
+
+            if (noteToVal[cleanNote] === undefined) return null;
+
+            const baseVal = noteToVal[cleanNote];
+            let octave = 4;
+            if (letter === letter.toLowerCase()) {
+                octave = 3 - preDots.length;
+            } else if (postDots.length > 0) {
+                octave = 4 + postDots.length;
+            }
+
+            let absVal = octave * 12 + baseVal;
+            // Hiệu chỉnh B# và Cb đúng quãng 8 thực tế
+            if (cleanNote === "B#") absVal += 12;
+            if (cleanNote === "CB") absVal -= 12;
+
+            return { absVal, baseVal, octave };
+        }
+
+        function getTransposeInterval() {
+            if (!state.source || !state.target) return 0;
+            const srcVal = keysData[state.source].val;
+            const tgtVal = keysData[state.target].val;
+            let interval = tgtVal - srcVal;
+            if (interval > 6) interval -= 12;
+            if (interval < -6) interval += 12;
+            return interval;
+        }
+
+        /* === LOGIC PLAY AUDIO (Web Audio API) === */
+        let audioCtx;
+        let playbackState = 'STOPPED';
+        let currentLineIndex = 0;
+        let playMode = 'ALL';
+        let playbackRunId = 0; // Chặn lỗi chồng luồng (race condition)
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, duration = 0.28) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            // Âm sắc sóng tam giác (triangle) êm tai, gần với tiếng sáo/kèn hơn sóng sine thuần
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const attack = Math.min(0.03, duration * 0.2);
+            const release = Math.min(0.06, duration * 0.3);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.85, now + attack);
+            gain.gain.setValueAtTime(0.85, now + duration - release);
+            gain.gain.linearRampToValueAtTime(0.001, now + duration);
+
+            osc.start(now);
+            osc.stop(now + duration);
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
+        }
+
+        function getFrequency(absVal) {
+            const midiNote = absVal + 12;
+            return 440 * Math.pow(2, (midiNote - 69) / 12);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;");
+        }
+
+        async function startPlayback(mode) {
+            initAudio();
+
+            if (playbackState === 'PAUSED' && playMode === mode) {
+                playbackState = 'PLAYING';
+                document.getElementById('btn-pause').textContent = "⏸ Tạm dừng";
+                return;
+            }
+
+            // Tăng playbackRunId để hủy ngay vòng lặp cũ nếu đang chạy
+            const myRunId = ++playbackRunId;
+            playMode = mode;
+            playbackState = 'PLAYING';
+
+            const pitchMode = document.getElementById('audio-pitch-mode').value;
+            document.getElementById('playback-title').textContent =
+                pitchMode === 'TARGET'
+                    ? `▶ Đang phát (Tone Đích: ${state.target})`
+                    : `▶ Đang phát (Tone Gốc: ${state.source || 'Gốc'})`;
+            document.getElementById('playback-modal').style.display = 'block';
+            document.getElementById('btn-pause').textContent = "⏸ Tạm dừng";
+
+            const inputText = document.getElementById('input-text').value;
+            const lines = inputText.split('\n');
+
+            if (currentLineIndex >= lines.length) {
+                currentLineIndex = 0;
+            }
+
+            while (currentLineIndex < lines.length && myRunId === playbackRunId) {
+                const line = lines[currentLineIndex].trim();
+                if (!line) {
+                    currentLineIndex++;
+                    continue;
+                }
+
+                const tokens = line.split(/(\s+)/);
+                for (let tIdx = 0; tIdx < tokens.length; tIdx++) {
+                    if (myRunId !== playbackRunId || playbackState === 'STOPPED') return;
+
+                    const token = tokens[tIdx];
+                    if (!token.trim()) continue;
+
+                    while (playbackState === 'PAUSED') {
+                        if (myRunId !== playbackRunId || playbackState === 'STOPPED') return;
+                        await sleep(80);
+                    }
+
+                    // Tô sáng nốt đang phát trên hộp thoại
+                    const highlightedLine = tokens.map((tk, idx) =>
+                        idx === tIdx
+                            ? `<span class="playing-note-highlight">${escapeHtml(tk)}</span>`
+                            : escapeHtml(tk)
+                    ).join('');
+                    document.getElementById('playback-line-display').innerHTML = highlightedLine;
+
+                    const parsed = parseNoteToken(token);
+                    if (parsed) {
+                        let playAbsVal = parsed.absVal;
+                        if (pitchMode === 'TARGET' && state.source && state.target) {
+                            playAbsVal += getTransposeInterval() + (octaveOffset * 12);
+                        }
+                        playTone(getFrequency(playAbsVal), 0.3);
+                        await sleep(380);
+                    } else {
+                        await sleep(60);
+                    }
+                }
+
+                currentLineIndex++;
+
+                if (currentLineIndex < lines.length && playbackState !== 'STOPPED' && myRunId === playbackRunId) {
+                    await sleep(450);
+                }
+
+                if (playMode === 'LINE' && myRunId === playbackRunId) {
+                    if (currentLineIndex >= lines.length) {
+                        stopPlayback();
+                        return;
+                    }
+                    playbackState = 'PAUSED';
+                    document.getElementById('btn-pause').textContent = "▶ Tiếp tục";
+                }
+            }
+
+            if (myRunId === playbackRunId && currentLineIndex >= lines.length) {
+                stopPlayback();
+            }
+        }
+
+        function togglePause() {
+            if (playbackState === 'PLAYING') {
+                playbackState = 'PAUSED';
+                document.getElementById('btn-pause').textContent = "▶ Tiếp tục";
+            } else if (playbackState === 'PAUSED') {
+                playbackState = 'PLAYING';
+                document.getElementById('btn-pause').textContent = "⏸ Tạm dừng";
+            }
+        }
+
+        function stopPlayback() {
+            playbackRunId++;
+            playbackState = 'STOPPED';
+            currentLineIndex = 0;
+            document.getElementById('playback-modal').style.display = 'none';
+            document.getElementById('btn-pause').textContent = "⏸ Tạm dừng";
+        }
+
+        /* === ĐIỀU KHIỂN QUÃNG 8 & BẢNG NỐT === */
+        function shiftOctave(change) {
+            octaveOffset += change;
+            const display = document.getElementById('octave-display');
+            display.textContent = octaveOffset > 0 ? "+" + octaveOffset : octaveOffset;
+            processTranspose();
+        }
+
+        function toggleNoteBoard() {
+            const container = document.getElementById('note-board-container');
+            const btn = document.getElementById('toggle-board-btn');
+            isBoardCollapsed = !isBoardCollapsed;
+
+            if (isBoardCollapsed) {
+                container.style.display = 'none';
+                btn.textContent = "▲ Mở rộng";
+            } else {
+                container.style.display = 'flex';
+                btn.textContent = "▼ Thu gọn";
+            }
+            updateBoardPosition();
+        }
+
+        function toggleKeyboard() {
+            const textarea = document.getElementById('input-text');
+            const btn = document.getElementById('toggle-kbd-btn');
+            isDeviceKeyboardEnabled = !isDeviceKeyboardEnabled;
+
+            if (isDeviceKeyboardEnabled) {
+                textarea.removeAttribute('readonly');
+                btn.textContent = "Bàn phím máy: BẬT";
+                btn.style.backgroundColor = "#e74c3c";
+                textarea.focus();
+            } else {
+                textarea.setAttribute('readonly', 'true');
+                btn.textContent = "Bàn phím máy: TẮT";
+                btn.style.backgroundColor = "#7f8c8d";
+                textarea.blur();
+            }
+        }
+
+        function updateBoardPosition() {
+            const wrapper = document.getElementById('note-board-wrapper');
+            if (window.visualViewport && wrapper.style.display !== 'none') {
+                let offsetBottom = window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop);
+                wrapper.style.bottom = Math.max(0, offsetBottom) + 'px';
+            }
+        }
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateBoardPosition);
+            window.visualViewport.addEventListener('scroll', updateBoardPosition);
+        }
+        window.addEventListener('scroll', updateBoardPosition);
+
+        function insertTextToken(tokenStr) {
+            const inputText = document.getElementById('input-text');
+            let currentVal = inputText.value;
+            if (currentVal.length > 0 && !currentVal.endsWith(' ') && !currentVal.endsWith('\n')) {
+                inputText.value += ' ';
+            }
+            inputText.value += tokenStr + ' ';
+            processTranspose();
+            inputText.scrollTop = inputText.scrollHeight;
+        }
+
+        function deleteLastToken() {
+            const inputText = document.getElementById('input-text');
+            let val = inputText.value.replace(/\s+$/, '');
+            if (!val) {
+                inputText.value = '';
+                processTranspose();
+                return;
+            }
+            const lastSpace = Math.max(val.lastIndexOf(' '), val.lastIndexOf('\n'));
+            if (lastSpace === -1) {
+                inputText.value = '';
+            } else {
+                inputText.value = val.slice(0, lastSpace + 1);
+            }
+            processTranspose();
+        }
+
+        function insertNewLine() {
+            const inputText = document.getElementById('input-text');
+            inputText.value = inputText.value.replace(/[ \t]+$/, '') + '\n';
+            processTranspose();
+            inputText.scrollTop = inputText.scrollHeight;
+        }
+
+        function clearAllNotes() {
+            const inputText = document.getElementById('input-text');
+            if (inputText.value.trim() && confirm("Xóa toàn bộ nốt nhạc đã nhập?")) {
+                inputText.value = '';
+                processTranspose();
+            }
+        }
+
+        function renderNoteBoard(key) {
+            const wrapper = document.getElementById('note-board-wrapper');
+            const container = document.getElementById('note-board-container');
+            const label = document.getElementById('current-tone-label');
+            const toggleBtn = document.getElementById('toggle-board-btn');
+
+            isBoardCollapsed = false;
+            container.style.display = 'flex';
+            toggleBtn.textContent = "▼ Thu gọn";
+            wrapper.style.display = 'flex';
+            updateBoardPosition();
+
+            label.textContent = key;
+            container.innerHTML = '';
+
+            let baseNotes = scalesDict[key].trim().split(/\s+/);
+            const letterOrder = { 'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6 };
+            baseNotes.sort((a, b) => letterOrder[a[0]] - letterOrder[b[0]]);
+
+            const octaveSettings = [
+                { name: "Thấp", transform: note => note.toLowerCase() },
+                { name: "Trung", transform: note => note },
+                { name: "Cao", transform: note => note.charAt(0) + "." + note.slice(1) }
+            ];
+
+            octaveSettings.forEach(setting => {
+                const row = document.createElement('div');
+                row.className = 'note-row';
+
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'note-row-label';
+                rowLabel.textContent = setting.name;
+                row.appendChild(rowLabel);
+
+                baseNotes.forEach(n => {
+                    const btn = document.createElement('div');
+                    btn.className = 'note-cell';
+                    const noteToken = setting.transform(n);
+                    btn.textContent = noteToken;
+
+                    btn.onmousedown = (e) => e.preventDefault();
+                    btn.onclick = () => {
+                        insertTextToken(noteToken);
+                        if (document.getElementById('tap-sound-chk').checked) {
+                            const parsed = parseNoteToken(noteToken);
+                            if (parsed) {
+                                playTone(getFrequency(parsed.absVal), 0.18);
+                            }
+                        }
+                    };
+                    row.appendChild(btn);
+                });
+                container.appendChild(row);
+            });
+
+            // Hàng phím công cụ thao tác nhanh cho Điện Thoại
+            const toolsRow = document.createElement('div');
+            toolsRow.className = 'board-tools-row';
+
+            const tools = [
+                { label: "⌫ Xóa nốt", action: deleteLastToken },
+                { label: "— Phách nghỉ", action: () => insertTextToken("-") },
+                { label: "↵ Xuống dòng", action: insertNewLine },
+                { label: "🗑️ Xóa hết", action: clearAllNotes, danger: true }
+            ];
+
+            tools.forEach(t => {
+                const btn = document.createElement('div');
+                btn.className = 'tool-cell' + (t.danger ? ' danger' : '');
+                btn.textContent = t.label;
+                btn.onmousedown = (e) => e.preventDefault();
+                btn.onclick = t.action;
+                toolsRow.appendChild(btn);
+            });
+
+            container.appendChild(toolsRow);
+        }
+
+        function drawWheel(containerId, isSource) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const radiusMajor = 108, radiusMinor = 65;
+            const centerX = 140, centerY = 140;
+
+            function createBtns(keys, radius, btnClass) {
+                const angleStep = (2 * Math.PI) / keys.length;
+                keys.forEach((key, i) => {
+                    const angle = i * angleStep - (Math.PI / 2);
+                    const btn = document.createElement('div');
+                    btn.className = `tone-btn ${btnClass}`;
+                    btn.textContent = key;
+                    btn.style.left = `${centerX + radius * Math.cos(angle) - 19}px`;
+                    btn.style.top = `${centerY + radius * Math.sin(angle) - 19}px`;
+                    btn.style.backgroundColor = keysData[key].col;
+
+                    if (!isSource && key === state.target) {
+                        btn.classList.add('selected');
+                    }
+
+                    btn.onclick = () => {
+                        container.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+
+                        if (isSource) {
+                            state.source = key;
+                            document.getElementById('mobile-src-badge').textContent = key;
+                            renderNoteBoard(key);
+                        } else {
+                            selectTargetKey(key);
+                        }
+
+                        if (state.source && state.target) {
+                            processTranspose();
+                        }
+                    };
+                    container.appendChild(btn);
+                });
+            }
+            createBtns(majorKeys, radiusMajor, 'major-btn');
+            createBtns(minorKeys, radiusMinor, 'minor-btn');
+        }
+
+        function processTranspose() {
+            const inputTxt = document.getElementById('input-text').value;
+            const useSolfege = document.getElementById('use-solfege').checked;
+            const diffLabel = document.getElementById('semitone-diff-label');
+
+            if (state.source && state.target) {
+                const totalShift = getTransposeInterval() + (octaveOffset * 12);
+                diffLabel.textContent = `(${totalShift >= 0 ? '+' : ''}${totalShift} bán cung)`;
+            } else {
+                diffLabel.textContent = '';
+            }
+
+            if (!inputTxt.trim() || !state.source || !state.target) {
+                document.getElementById('output-text').innerHTML = '';
+                return;
+            }
+
+            const interval = getTransposeInterval();
+            const targetNoteSet = flatKeys.includes(state.target) ? flats : sharps;
+            const tokens = inputTxt.split(/(\s+)/);
+
+            const parsedData = tokens.map(token => {
+                const parsed = parseNoteToken(token);
+                if (parsed) {
+                    const newAbsoluteVal = parsed.absVal + interval + (octaveOffset * 12);
+                    const newOctave = Math.floor(newAbsoluteVal / 12);
+                    let newBaseVal = ((newAbsoluteVal % 12) + 12) % 12;
+
+                    let newNoteStr = targetNoteSet[newBaseVal];
+                    let dictKey = newNoteStr.length === 2
+                        ? newNoteStr[0].toUpperCase() + newNoteStr[1].toLowerCase()
+                        : newNoteStr.toUpperCase();
+
+                    let finalString = "";
+
+                    if (useSolfege && solfegeMap[dictKey]) {
+                        if (newOctave <= 3) {
+                            const lowDots = ".".repeat(Math.max(0, 3 - newOctave));
+                            finalString = lowDots + solfegeMap[dictKey].low;
+                        } else if (newOctave === 4) {
+                            finalString = solfegeMap[dictKey].mid;
+                        } else {
+                            let highStr = solfegeMap[dictKey].high;
+                            if (newOctave > 5) {
+                                const highDots = ".".repeat(newOctave - 5);
+                                if (highStr.endsWith("#") || highStr.endsWith("b")) {
+                                    finalString = highStr.slice(0, -1) + highDots + highStr.slice(-1);
+                                } else {
+                                    finalString = highStr + highDots;
+                                }
+                            } else {
+                                finalString = highStr;
+                            }
+                        }
+                    } else {
+                        if (newOctave <= 3) {
+                            const lowDots = ".".repeat(Math.max(0, 3 - newOctave));
+                            finalString = lowDots + newNoteStr.toLowerCase();
+                        } else if (newOctave === 4) {
+                            finalString = newNoteStr;
+                        } else {
+                            finalString = newNoteStr.charAt(0) + ".".repeat(newOctave - 4) + newNoteStr.slice(1);
+                        }
+                    }
+
+                    return { isNote: true, text: finalString, absVal: newAbsoluteVal };
+                }
+                return { isNote: false, text: token };
+            });
+
+            const noteIndices = [];
+            parsedData.forEach((item, index) => {
+                if (item.isNote) noteIndices.push(index);
+            });
+
+            for (let i = 0; i < noteIndices.length; i++) {
+                const curr = parsedData[noteIndices[i]];
+                const prev = i > 0 ? parsedData[noteIndices[i - 1]] : null;
+                const next = i < noteIndices.length - 1 ? parsedData[noteIndices[i + 1]] : null;
+
+                let isRed = false;
+                let isGreen = false;
+
+                if (prev) {
+                    const diff = Math.abs(curr.absVal - prev.absVal);
+                    if (diff === 0) isRed = true;
+                    else if (diff === 1 || diff === 2) isGreen = true;
+                }
+                if (next) {
+                    const diff = Math.abs(curr.absVal - next.absVal);
+                    if (diff === 0) isRed = true;
+                    else if (diff === 1 || diff === 2) isGreen = true;
+                }
+
+                curr.color = isRed ? "#e74c3c" : (isGreen ? "#2ecc71" : "#2c3e50");
+            }
+
+            const transposedTokens = parsedData.map(item => {
+                if (item.isNote) {
+                    return `<span style="color: ${item.color}; font-weight: bold;">${escapeHtml(item.text)}</span>`;
+                }
+                return escapeHtml(item.text);
+            });
+
+            document.getElementById('output-text').innerHTML = transposedTokens.join('');
+        }
+
+        function copyResult() {
+            const textToCopy = document.getElementById('output-text').innerText;
+            if (!textToCopy.trim()) return;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = "Đã chép!";
+                btn.style.backgroundColor = "#2980b9";
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = "#2ecc71";
+                }, 1800);
+            });
+        }
+
+        function downloadImage() {
+            const outputHtml = document.getElementById('output-text').innerHTML;
+            if (!outputHtml.trim()) {
+                alert("Chưa có kết quả nốt nhạc để tạo ảnh!");
+                return;
+            }
+
+            const songTitleInput = document.getElementById('song-title').value.trim();
+            const displayTitle = songTitleInput || "Bản Nhạc Chuyển Tone";
+            const filename = (songTitleInput ? songTitleInput.replace(/\s+/g, '_') : "Ban_Nhac") + `_${state.target}`;
+
+            const exportDiv = document.createElement('div');
+            exportDiv.style.position = 'fixed';
+            exportDiv.style.top = '0';
+            exportDiv.style.left = '-9999px';
+            exportDiv.style.width = '760px';
+            exportDiv.style.backgroundColor = '#f8f9fa';
+            exportDiv.style.padding = '36px';
+            exportDiv.style.fontFamily = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+            const titleEl = document.createElement('h2');
+            titleEl.style.textAlign = 'center';
+            titleEl.style.color = '#2c3e50';
+            titleEl.style.margin = '0 0 10px 0';
+            titleEl.style.fontSize = '2em';
+            titleEl.textContent = displayTitle;
+            exportDiv.appendChild(titleEl);
+
+            const tonesEl = document.createElement('p');
+            tonesEl.style.textAlign = 'center';
+            tonesEl.style.color = '#7f8c8d';
+            tonesEl.style.margin = '0 0 24px 0';
+            tonesEl.style.fontSize = '1.15em';
+            tonesEl.innerHTML = `Tone gốc: <strong>${state.source || "Chưa chọn"}</strong> &nbsp;&nbsp;➡️&nbsp;&nbsp; Tone đích: <strong style="color: #e74c3c;">${state.target}</strong>`;
+            exportDiv.appendChild(tonesEl);
+
+            const notesEl = document.createElement('div');
+            notesEl.style.whiteSpace = 'pre-wrap';
+            notesEl.style.fontSize = '1.35em';
+            notesEl.style.lineHeight = '1.8';
+            notesEl.style.fontWeight = 'bold';
+            notesEl.style.color = '#333';
+            notesEl.innerHTML = outputHtml;
+            exportDiv.appendChild(notesEl);
+
+            document.body.appendChild(exportDiv);
+
+            html2canvas(exportDiv, {
+                backgroundColor: "#f8f9fa",
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = filename + '.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                document.body.removeChild(exportDiv);
+            });
+        }
+
+        window.onload = () => {
+            drawWheel('source-wheel', true);
+            drawWheel('target-wheel', false);
+            document.getElementById('input-text').addEventListener('input', processTranspose);
+        };
+    </script>
+</body>
+</html>
